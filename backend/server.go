@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -35,10 +37,42 @@ func main() {
 		log.Println("Websocket Connected!")
 		listen(websocket)
 	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	http.HandleFunc("/addComment", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("error in processing request"))
+			slog.Error("Error reading request")
+		}
+		var commentBody commentRequestBody
+		err = json.Unmarshal(body, &commentBody)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("error in processing request body"))
+			slog.Error("Error unmarshaling request body")
+		}
+		if commentBody.Name != "" && commentBody.Comment != "" {
+			err := storeComment(commentBody)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("error in processing request"))
+				slog.Error("Error writing comment to datastore")
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("comment added successfully"))
+			}
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("atleast one of the fields is empty"))
+		}
+	})
 
 	// Serve on port :8080
-	(http.ListenAndServe(":8080", nil))
+	slog.Info("Running at 8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+
 }
 
 func listen(conn *websocket.Conn) {
@@ -65,16 +99,9 @@ func listen(conn *websocket.Conn) {
 	}
 }
 
-// // Manager is a HTTP Handler that the has the Manager that allows connections
-// func Manager(w http.ResponseWriter, r *http.Request) {
-
-// 	log.Println("New connection")
-// 	// Begin by upgrading the HTTP request
-// 	conn, err := websocketUpgrader.Upgrade(w, r, nil)
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
-// 	// We wont do anything yet so close connection again
-// 	conn.Close()
-// }
+func storeComment(commentBody commentRequestBody) error {
+	now := time.Now().UnixMilli()
+	file, _ := json.MarshalIndent(commentBody, "", " ")
+	err := os.WriteFile(fmt.Sprintf("datastore/%+v.json", now), file, 0644)
+	return err
+}

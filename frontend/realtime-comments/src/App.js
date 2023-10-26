@@ -5,6 +5,7 @@ import CommentViewer from './components/CommentViewer/CommentViewer';
 import { WebsocketHandler } from './helper/api';
 import { useEffect } from 'react';
 function App() {
+  
   useEffect(() => {
     WebsocketHandler()
   });

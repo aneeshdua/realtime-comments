@@ -1,31 +1,39 @@
 import {
   FormControl,
   FormLabel,
-  FormErrorMessage,
   FormHelperText,
   Input,
   Button
 } from '@chakra-ui/react'
 import styles from "./CommentForm.module.scss"
+import { useState } from 'react';
+import { sendComment } from '../../helper/api';
 
 export default function CommentForm() {
-    return (
+  const [name, setName] = useState('');
+  const [comment, setComment] = useState('');
+  function commentSubmitHandler(){
+    // console.log(name,comment)
+    sendComment(name,comment)
+  }
+  return (
       <>
         <div className={styles.FormCtn}>
           <FormControl>
             <FormLabel>Name</FormLabel>
-            <Input/>
+            <Input onChange={event => setName(event.currentTarget.value)}/>
             <FormHelperText>Enter your name</FormHelperText>
           </FormControl>
           <FormControl>
             <FormLabel>Comment</FormLabel>
-            <Input/>
+            <Input onChange={event => setComment(event.currentTarget.value)}/>
             <FormHelperText>Enter your Comment</FormHelperText>
           </FormControl>
           <Button
               mt={4}
               colorScheme='teal'
               type='submit'
+              onClick={commentSubmitHandler}
             >
               Submit
             </Button>
