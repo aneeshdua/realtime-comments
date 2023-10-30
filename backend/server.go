@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/patrickmn/go-cache"
 )
 
 func main() {
@@ -26,7 +27,21 @@ func main() {
 			WriteBufferSize: 1024,
 		}
 	)
+	commentsData := newCache()
+	readAllComments(commentsData)
 
+	commentMap := commentsData.commentList.Items()
+	var commentList []commentRequestBody
+
+	// Iterate over the map and append the values to the slice
+	for _, value := range commentMap {
+		comment, ok := value.Object.(commentRequestBody)
+		if ok {
+			commentList = append(commentList, comment)
+		} else {
+			slog.Error("Cache corrupted")
+		}
+	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		websocketUpgrader.CheckOrigin = func(r *http.Request) bool { return true }
 		websocket, err := websocketUpgrader.Upgrade(w, r, nil)
@@ -35,7 +50,7 @@ func main() {
 			return
 		}
 		log.Println("Websocket Connected!")
-		listen(websocket)
+		listen(websocket, commentList)
 	})
 
 	http.HandleFunc("/addComment", func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +69,7 @@ func main() {
 			slog.Error("Error unmarshaling request body")
 		}
 		if commentBody.Name != "" && commentBody.Comment != "" {
-			err := storeComment(commentBody)
+			err := storeComment(commentBody, commentsData)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("error in processing request"))
@@ -71,37 +86,32 @@ func main() {
 
 	// Serve on port :8080
 	slog.Info("Running at 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 
 }
 
-func listen(conn *websocket.Conn) {
+func listen(conn *websocket.Conn, commentList []commentRequestBody) {
 	for {
 		// read a message
-		messageType, messageContent, err := conn.ReadMessage()
-		timeReceive := time.Now()
+		_, messageContent, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
-
-		// print out that message
-		fmt.Println(string(messageContent))
-
-		// reponse message
-		messageResponse := fmt.Sprintf("Your message is: %s. Time received : %v", messageContent, timeReceive)
-
-		if err := conn.WriteMessage(messageType, []byte(messageResponse)); err != nil {
-			log.Println(err)
-			return
+		if string(messageContent) == "fetchComments" {
+			if err := conn.WriteJSON(commentList); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
 	}
 }
 
-func storeComment(commentBody commentRequestBody) error {
+func storeComment(commentBody commentRequestBody, commentsData *commentsCache) error {
 	now := time.Now().UnixMilli()
 	file, _ := json.MarshalIndent(commentBody, "", " ")
 	err := os.WriteFile(fmt.Sprintf("datastore/%+v.json", now), file, 0644)
+	commentsData.commentList.Set(fmt.Sprintf("datastore/%+v.json", now), commentBody, cache.DefaultExpiration)
 	return err
 }
