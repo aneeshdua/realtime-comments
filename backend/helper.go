@@ -8,21 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
-
-	"github.com/patrickmn/go-cache"
+	"websocket-server/memcache"
 )
-
-const (
-	defaultExpiration = 5 * time.Minute
-	purgeTime         = 10 * time.Minute
-)
-
-func newCache() *commentsCache {
-	Cache := cache.New(defaultExpiration, purgeTime)
-	return &commentsCache{
-		commentList: Cache,
-	}
-}
 
 func readJSONFile(filename string) ([]byte, error) {
 	data, err := os.ReadFile(filename)
@@ -32,7 +19,22 @@ func readJSONFile(filename string) ([]byte, error) {
 	return data, nil
 }
 
-func readAllComments(commentsData *commentsCache) {
+func processCacheObjects(commentMap *memcache.Cache) []commentRequestBody {
+	commentList := make([]commentRequestBody, 0)
+	for _, value := range commentMap.Data {
+		var comment commentRequestBody
+		err := json.Unmarshal([]byte(value), &comment)
+		if err != nil {
+			fmt.Println("error in processing cache data")
+		} else {
+			commentList = append(commentList, comment)
+		}
+
+	}
+	return commentList
+}
+
+func readAllComments(commentsData *memcache.Cache) {
 	files, err := filepath.Glob("datastore/*.json")
 	if err != nil {
 		fmt.Println("Error: Unable to find JSON files in the current directory.")
@@ -55,11 +57,24 @@ func readAllComments(commentsData *commentsCache) {
 			if err != nil {
 				fmt.Println(err)
 			}
-			commentsData.commentList.Set(filename, comment, cache.DefaultExpiration)
+			commentsData.Set(filename, string(data))
+			// memcache.AddtoCache(commentsData, filename, string(data))
+			// commentsData.commentList.Set(filename, comment, cache.DefaultExpiration)
 			slog.Info("Cached %s\n", filename)
 		}(file)
 	}
 
 	// Wait for all goroutines to finish
 	wg.Wait()
+}
+
+func storeComment(commentBody commentRequestBody, commentsData *memcache.Cache) error {
+	now := time.Now().UnixMilli()
+	file, _ := json.MarshalIndent(commentBody, "", " ")
+	err := os.WriteFile(fmt.Sprintf("datastore/%+v.json", now), file, 0644)
+	commentsData.Set(fmt.Sprintf("%+v", now), string(file))
+	// memcache.AddtoCache(commentsData, fmt.Sprintf("%+v", now), string(file))
+	// commentsData.commentList.Set(fmt.Sprintf("datastore/%+v.json", now), commentBody, cache.DefaultExpiration)
+	// fmt.Println(commentsData.commentList.Items())
+	return err
 }

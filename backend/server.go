@@ -2,16 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
+
+	"websocket-server/memcache"
 
 	"github.com/gorilla/websocket"
-	"github.com/patrickmn/go-cache"
 )
 
 func main() {
@@ -27,21 +26,11 @@ func main() {
 			WriteBufferSize: 1024,
 		}
 	)
-	commentsData := newCache()
-	readAllComments(commentsData)
 
-	commentMap := commentsData.commentList.Items()
-	var commentList []commentRequestBody
+	cache := memcache.NewCache()
 
-	// Iterate over the map and append the values to the slice
-	for _, value := range commentMap {
-		comment, ok := value.Object.(commentRequestBody)
-		if ok {
-			commentList = append(commentList, comment)
-		} else {
-			slog.Error("Cache corrupted")
-		}
-	}
+	readAllComments(cache)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		websocketUpgrader.CheckOrigin = func(r *http.Request) bool { return true }
 		websocket, err := websocketUpgrader.Upgrade(w, r, nil)
@@ -50,7 +39,7 @@ func main() {
 			return
 		}
 		log.Println("Websocket Connected!")
-		listen(websocket, commentList)
+		listen(websocket, cache)
 	})
 
 	http.HandleFunc("/addComment", func(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +58,7 @@ func main() {
 			slog.Error("Error unmarshaling request body")
 		}
 		if commentBody.Name != "" && commentBody.Comment != "" {
-			err := storeComment(commentBody, commentsData)
+			err := storeComment(commentBody, cache)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("error in processing request"))
@@ -90,7 +79,7 @@ func main() {
 
 }
 
-func listen(conn *websocket.Conn, commentList []commentRequestBody) {
+func listen(conn *websocket.Conn, cache *memcache.Cache) {
 	for {
 		// read a message
 		_, messageContent, err := conn.ReadMessage()
@@ -99,6 +88,8 @@ func listen(conn *websocket.Conn, commentList []commentRequestBody) {
 			return
 		}
 		if string(messageContent) == "fetchComments" {
+			var commentList []commentRequestBody
+			commentList = processCacheObjects(cache)
 			if err := conn.WriteJSON(commentList); err != nil {
 				log.Println(err)
 				return
@@ -106,12 +97,4 @@ func listen(conn *websocket.Conn, commentList []commentRequestBody) {
 		}
 
 	}
-}
-
-func storeComment(commentBody commentRequestBody, commentsData *commentsCache) error {
-	now := time.Now().UnixMilli()
-	file, _ := json.MarshalIndent(commentBody, "", " ")
-	err := os.WriteFile(fmt.Sprintf("datastore/%+v.json", now), file, 0644)
-	commentsData.commentList.Set(fmt.Sprintf("datastore/%+v.json", now), commentBody, cache.DefaultExpiration)
-	return err
 }
