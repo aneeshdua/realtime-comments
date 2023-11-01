@@ -16,7 +16,8 @@ import (
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
-
+	hub := newHub()
+	go hub.run()
 	var (
 		/**
 		websocketUpgrader is used to upgrade incomming HTTP requests into a persitent websocket connection
@@ -40,6 +41,10 @@ func main() {
 		}
 		log.Println("Websocket Connected!")
 		listen(websocket, cache)
+	})
+
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWs(hub, w, r, cache)
 	})
 
 	http.HandleFunc("/addComment", func(w http.ResponseWriter, r *http.Request) {

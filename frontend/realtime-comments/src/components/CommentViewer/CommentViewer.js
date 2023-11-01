@@ -5,7 +5,7 @@ import {
 import Comment from '../Comment/Comment';
   
   export default function CommentViewer(commentData) {
-      // console.log(commentData)
+      console.log(commentData)
       return (
         <>
             <div className={styles.ViewerCtn}>

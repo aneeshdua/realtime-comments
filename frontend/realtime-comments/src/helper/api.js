@@ -1,16 +1,16 @@
-export function WebsocketHandler() {
-    let socket = new WebSocket("ws://127.0.0.1:8080");
+export function WebsocketHandler(setCommentData) {
+    let socket = new WebSocket("ws://127.0.0.1:8080/ws");
 
     socket.onopen = function(e) {
       console.log("[open] Connection established");
       // alert("Sending to server");
-      socket.send("fetchComments");
+      // socket.send("fetchComments");
     };
     
-    // socket.onmessage = function(event) {
-    //   console.log(`[message] Data received from server: ${event.data}`);
-    //   CommentContext = event.data
-    // };
+    socket.onmessage = function(event) {
+      console.log(`[message] Data received from server: ${event.data}`);
+      setCommentData(JSON.parse(event.data))
+    };
     
     // socket.onclose = function(event) {
     //   if (event.wasClean) {
