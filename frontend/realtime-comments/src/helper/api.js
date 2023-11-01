@@ -4,11 +4,12 @@ export function WebsocketHandler() {
     socket.onopen = function(e) {
       console.log("[open] Connection established");
       // alert("Sending to server");
-      // socket.send("My name is John");
+      socket.send("fetchComments");
     };
     
     // socket.onmessage = function(event) {
     //   console.log(`[message] Data received from server: ${event.data}`);
+    //   CommentContext = event.data
     // };
     
     // socket.onclose = function(event) {
