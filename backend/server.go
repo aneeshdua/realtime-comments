@@ -82,19 +82,25 @@ func main() {
 func listen(conn *websocket.Conn, cache *memcache.Cache) {
 	for {
 		// read a message
-		_, messageContent, err := conn.ReadMessage()
-		if err != nil {
+		// _, messageContent, err := conn.ReadMessage()
+		// if err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
+		var commentList []commentRequestBody
+		commentList = processCacheObjects(cache)
+		if err := conn.WriteJSON(commentList); err != nil {
 			log.Println(err)
 			return
 		}
-		if string(messageContent) == "fetchComments" {
-			var commentList []commentRequestBody
-			commentList = processCacheObjects(cache)
-			if err := conn.WriteJSON(commentList); err != nil {
-				log.Println(err)
-				return
-			}
-		}
+		// if string(messageContent) == "fetchComments" {
+		// 	var commentList []commentRequestBody
+		// 	commentList = processCacheObjects(cache)
+		// 	if err := conn.WriteJSON(commentList); err != nil {
+		// 		log.Println(err)
+		// 		return
+		// 	}
+		// }
 
 	}
 }
