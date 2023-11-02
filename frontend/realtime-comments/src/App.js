@@ -2,7 +2,7 @@ import './App.css';
 import CommentForm from './components/CommentForm/CommentForm'
 import { ChakraProvider } from '@chakra-ui/react'
 import CommentViewer from './components/CommentViewer/CommentViewer';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 function App() {
   const [commentData,setCommentData] = useState([])

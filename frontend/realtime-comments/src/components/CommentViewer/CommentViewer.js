@@ -1,5 +1,5 @@
 import {
-    Input, Text
+    Text
   } from '@chakra-ui/react'
   import styles from "./CommentViewer.module.scss"
 import Comment from '../Comment/Comment';

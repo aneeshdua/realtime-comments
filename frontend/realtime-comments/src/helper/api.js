@@ -1,4 +1,4 @@
-export async function sendComment(name,comment){
+export async function sendComment(name,comment,setName,setComment){
   const resp = await fetch("http://localhost:8080/addComment",{
     method: 'POST',
     body: JSON.stringify({
@@ -6,7 +6,13 @@ export async function sendComment(name,comment){
       "comment": comment
     })
   })
-  const data = await resp.text()
-  console.log(data)
+  const status = await resp.status
+  if(status === 200){
+    setName('')
+    setComment('')
+    alert("Comment added succesfully")
+  } else {
+    alert("Error while uploading comment. Please try again!",status)
+  }
 }
 
