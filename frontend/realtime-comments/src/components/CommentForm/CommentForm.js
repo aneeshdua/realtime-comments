@@ -6,23 +6,28 @@ import {
   Button
 } from '@chakra-ui/react'
 import styles from "./CommentForm.module.scss"
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { sendComment } from '../../helper/api';
-import { useWebSocket } from '../../App';
+import { WebSocketContext} from '../../App';
 
 export default function CommentForm() {
   const [name, setName] = useState('');
   const [comment, setComment] = useState('');
-  const socket = useWebSocket();
-
+  const socket = useContext(WebSocketContext)
 
   useEffect(() => {
     // Access the WebSocket instance in your child component
     console.log("Child component is using the WebSocket connection");
+    if(socket != null){
+      console.log("chala")
+    }
   }, [socket]);
 
 
   async function commentSubmitHandler(){
+    if(socket!=null){
+      socket.send("xya")
+    }
     await sendComment(name,comment,setName,setComment)
   }
   return (

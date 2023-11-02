@@ -10,7 +10,7 @@ import Comment from '../Comment/Comment';
             <div className={styles.ViewerCtn}>
                 <Text fontSize='4xl'>Comments</Text>
                 {commentData.commentData.map((value,index) => (
-                  <Comment props={value}/>
+                  <Comment key={value.name} props={value}/>
                 ))}
             </div>
         </>

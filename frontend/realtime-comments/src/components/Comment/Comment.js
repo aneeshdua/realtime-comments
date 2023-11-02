@@ -13,7 +13,7 @@ export default function Comment(props) {
               <Text as='b' className={styles.UserName}>{props.props.name}</Text>
             </div>
           </div>
-          <div class={styles.CommentText}>
+          <div className={styles.CommentText}>
           <Text>{props.props.comment}</Text>
           </div>
         </div>

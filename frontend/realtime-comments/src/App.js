@@ -4,18 +4,18 @@ import { ChakraProvider } from '@chakra-ui/react'
 import CommentViewer from './components/CommentViewer/CommentViewer';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-const WebSocketContext = createContext(null);
-export const WebSocketProvider = ({ socket, children }) => (
-  <WebSocketContext.Provider value={socket}>{children}</WebSocketContext.Provider>
-);
+export const WebSocketContext = createContext(null);
+// export const WebSocketProvider = ({ socket, children }) => (
+//   <WebSocketContext.Provider value={socket}>{children}</WebSocketContext.Provider>
+// );
 
-export const useWebSocket = () => {
-  const socket = useContext(WebSocketContext);
-  if (!socket) {
-    throw new Error("useWebSocket must be used within a WebSocketProvider");
-  }
-  return socket;
-};
+// export const useWebSocket = () => {
+//   const socket = useContext(WebSocketContext);
+//   if (!socket) {
+//     throw new Error("useWebSocket must be used within a WebSocketProvider");
+//   }
+//   return socket;
+// };
 
 
 function App() {
@@ -41,17 +41,17 @@ function App() {
       }
     };
 
-    newSocket.onclose = (event) => {
-      if (event.wasClean) {
-        console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
-      } else {
-        console.error("Connection died");
-      }
-    };
+    // newSocket.onclose = (event) => {
+    //   if (event.wasClean) {
+    //     console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
+    //   } else {
+    //     console.error("Connection died");
+    //   }
+    // };
 
-    newSocket.onerror = (error) => {
-      console.error("WebSocket error: " + error.message);
-    };
+    // newSocket.onerror = (error) => {
+    //   console.error("WebSocket error: " + error.message);
+    // };
     setSocket(newSocket);
     return () => {
       // Clean up the WebSocket connection when the component unmounts
@@ -63,10 +63,10 @@ function App() {
 
   return (
     <ChakraProvider>
-         <WebSocketProvider socket={socket}>
+         <WebSocketContext.Provider value={socket}>
           <CommentForm/>
           <CommentViewer commentData={commentData}/>
-        </WebSocketProvider>
+        </WebSocketContext.Provider>
     </ChakraProvider>
   );
 }
