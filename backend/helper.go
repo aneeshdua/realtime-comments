@@ -73,8 +73,5 @@ func storeComment(commentBody commentRequestBody, commentsData *memcache.Cache) 
 	file, _ := json.MarshalIndent(commentBody, "", " ")
 	err := os.WriteFile(fmt.Sprintf("datastore/%+v.json", now), file, 0644)
 	commentsData.Set(fmt.Sprintf("%+v", now), string(file))
-	// memcache.AddtoCache(commentsData, fmt.Sprintf("%+v", now), string(file))
-	// commentsData.commentList.Set(fmt.Sprintf("datastore/%+v.json", now), commentBody, cache.DefaultExpiration)
-	// fmt.Println(commentsData.commentList.Items())
 	return err
 }

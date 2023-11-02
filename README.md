@@ -3,6 +3,7 @@ This is a toy project that covers end to end work of having a realtime comments 
 
 ## Features
 * Minimal UI for comments - add new comments and view all comments
+* Add and view comments in Realtime
 * Reactions [WIP]
 * Nested comments(replies) [WIP]
 
