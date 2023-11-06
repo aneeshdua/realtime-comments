@@ -2,127 +2,99 @@ import './App.css';
 import CommentForm from './components/CommentForm/CommentForm'
 import { ChakraProvider } from '@chakra-ui/react'
 import CommentViewer from './components/CommentViewer/CommentViewer';
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState,useCallback } from 'react';
+import useWebSocket, { ReadyState } from "react-use-websocket"
 
-export const WebSocketContext = createContext(null);
-// export const WebSocketProvider = ({ socket, children }) => (
-//   <WebSocketContext.Provider value={socket}>{children}</WebSocketContext.Provider>
-// );
-
-// export const useWebSocket = () => {
-//   const socket = useContext(WebSocketContext);
-//   if (!socket) {
-//     throw new Error("useWebSocket must be used within a WebSocketProvider");
-//   }
-//   return socket;
-// };
-
+// export const WebSocketContext = createContext(null);
 
 function App() {
-  console.log("page refreshed")
   const [commentData,setCommentData] = useState([])
-  console.log("commentData init",commentData)
-  // var socket
-  const [socket, setSocket] = useState(null);
-  const ws = useRef(null);
-
-
-  // useEffect(() => {
-  //     ws.current = new WebSocket("ws://127.0.0.1:8080/ws");
-    
-  //     ws.current.onopen = () => {
-  //       console.log("WebSocket connection opened");
-  //     };
   
-  //     ws.current.onmessage = (event) => {
-  //       console.log("Received message: ", event.data);
-  //       try {
-  //         const data = JSON.parse(event.data)
-  //         console.log("commentData",commentData)
-  //         if(commentData.length != 0){
-  //           console.log("appending")
-  //           setCommentData(commentData=>[...commentData,data])
-  //         } else {
-  //           setCommentData(data)
-  //         }
-           
-  //       } catch (e) { 
-  //         console.log("Invalid data recieved from server",e);
-  //       }
-  //     };
-  
-  //     ws.current.onclose = (event) => {
-  //       if (event.wasClean) {
-  //         console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
-  //       } else {
-  //         console.error("Connection died");
-  //       }
-  //     };
-  //     const wsCurrent = ws.current;
+  const WS_URL = "ws://127.0.0.1:8080/ws"
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
+    WS_URL,
+    {
+      share: false,
+      shouldReconnect: () => true,
+    },
+  )
 
-  //     return () => {
-  //         wsCurrent.close();
-  //     };
-      
-  //     // newSocket.onerror = (error) => {
-  //     //   console.error("WebSocket error: " + error.message);
-  //     // };
-  //     // setSocket(newSocket);
-  //     // return () => {
-  //     //   // Clean up the WebSocket connection when the component unmounts
-  //     //   newSocket.close();
-  //     // };
-  //   }, []);
-
+  // Run when the connection state (readyState) changes
   useEffect(() => {
-    const newSocket = new WebSocket("ws://127.0.0.1:8080/ws")
-  
-    newSocket.onopen = () => {
-      console.log("WebSocket connection opened");
-    };
+    console.log("Connection state changed")
+    if (readyState === ReadyState.OPEN) {
+      // sendJsonMessage({
+      //   name: "lib",
+      //   comment: "lib"
+      // })
+    }
+  }, [readyState])
 
-    newSocket.onmessage = (event) => {
-      console.log("Received message: ", event.data);
-      try {
-        const data = JSON.parse(event.data)
-        console.log("commentData",commentData)
+  // Run when a new WebSocket message is received (lastJsonMessage)
+  useEffect(() => {
+    // console.log(`Got a new message: ${JSON.stringify(lastJsonMessage)}`)
+    if(lastJsonMessage != null){
         if(commentData.length != 0){
           console.log("appending")
-          setCommentData(commentData=>[...commentData,data])
+          setCommentData(commentData=>[...commentData,lastJsonMessage])
         } else {
-          setCommentData(data)
-        } 
-      } catch (e) { 
-        console.log("Invalid data recieved from server",e);
-      }
-    };
+          setCommentData(lastJsonMessage)
+        }
+    }  
+  }, [lastJsonMessage])
 
-    // newSocket.onclose = (event) => {
-    //   if (event.wasClean) {
-    //     console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
-    //   } else {
-    //     console.error("Connection died");
-    //   }
-    // };
+  const handleClickSendMessage = useCallback((name,comment) => sendJsonMessage({"name":name,"comment":comment}), []);
 
-    // newSocket.onerror = (error) => {
-    //   console.error("WebSocket error: " + error.message);
-    // };
-    setSocket(newSocket);
-    return () => {
-      // Clean up the WebSocket connection when the component unmounts
-      newSocket.close();
-    };
-  }, []);
+  // Non library implementation -buggy
+  // const [socket, setSocket] = useState(null);
+  // useEffect(() => {
+  //   const newSocket = new WebSocket("ws://127.0.0.1:8080/ws")
+  
+  //   newSocket.onopen = () => {
+  //     console.log("WebSocket connection opened");
+  //   };
+
+  //   newSocket.onmessage = (event) => {
+  //     console.log("Received message: ", event.data);
+  //     try {
+  //       const data = JSON.parse(event.data)
+  //       console.log("commentData",commentData)
+  //       if(commentData.length != 0){
+  //         console.log("appending")
+  //         setCommentData(commentData=>[...commentData,data])
+  //       } else {
+  //         setCommentData(data)
+  //       } 
+  //     } catch (e) { 
+  //       console.log("Invalid data recieved from server",e);
+  //     }
+  //   };
+
+  //   // newSocket.onclose = (event) => {
+  //   //   if (event.wasClean) {
+  //   //     console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
+  //   //   } else {
+  //   //     console.error("Connection died");
+  //   //   }
+  //   // };
+
+  //   // newSocket.onerror = (error) => {
+  //   //   console.error("WebSocket error: " + error.message);
+  //   // };
+  //   setSocket(newSocket);
+  //   return () => {
+  //     // Clean up the WebSocket connection when the component unmounts
+  //     newSocket.close();
+  //   };
+  // }, []);
 
   
 
   return (
     <ChakraProvider>
-         <WebSocketContext.Provider value={socket}>
-          <CommentForm/>
+         
+          <CommentForm socketHandler={handleClickSendMessage}/>
           <CommentViewer commentData={commentData}/>
-        </WebSocketContext.Provider>
     </ChakraProvider>
   );
 }

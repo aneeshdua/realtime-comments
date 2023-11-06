@@ -10,22 +10,23 @@ import { useContext, useEffect, useState } from 'react';
 import { sendComment } from '../../helper/api';
 import { WebSocketContext} from '../../App';
 
-export default function CommentForm() {
+export default function CommentForm(props) {
   const [name, setName] = useState('');
   const [comment, setComment] = useState('');
-  const socket = useContext(WebSocketContext)
+  // const socket = useContext(WebSocketContext)
 
  
 
   async function commentSubmitHandler(){
-    if(socket!=null){
-      const obj = [{
-        "name":name,
-        "comment":comment
-      }]
-      socket.send(JSON.stringify(obj))
-    }
+    // if(socket!=null){
+    //   const obj = [{
+    //     "name":name,
+    //     "comment":comment
+    //   }]
+    //   socket.send(JSON.stringify(obj))
+    // }
     await sendComment(name,comment,setName,setComment)
+    props.socketHandler(name,comment)
   }
   return (
       <>
