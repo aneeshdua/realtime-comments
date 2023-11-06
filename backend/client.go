@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 	"websocket-server/memcache"
@@ -70,6 +71,7 @@ func (c *Client) readPump() {
 			}
 			break
 		}
+		slog.Info("Recieved message at readPump", string(message), nil)
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.hub.broadcast <- message
 	}

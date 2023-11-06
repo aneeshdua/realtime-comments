@@ -15,18 +15,15 @@ export default function CommentForm() {
   const [comment, setComment] = useState('');
   const socket = useContext(WebSocketContext)
 
-  useEffect(() => {
-    // Access the WebSocket instance in your child component
-    console.log("Child component is using the WebSocket connection");
-    if(socket != null){
-      console.log("chala")
-    }
-  }, [socket]);
-
+ 
 
   async function commentSubmitHandler(){
     if(socket!=null){
-      socket.send("xya")
+      const obj = [{
+        "name":name,
+        "comment":comment
+      }]
+      socket.send(JSON.stringify(obj))
     }
     await sendComment(name,comment,setName,setComment)
   }
